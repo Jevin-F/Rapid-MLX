@@ -57,6 +57,19 @@ struct QuickstartViewTests {
         #expect(!lowered.contains("web search"))
     }
 
+    @Test("Welcome message does not promise a download duration")
+    func seedMessageDropsDurationPromise() {
+        // The copy said the starter was "picked so you can start chatting in
+        // about a minute". It fires for whichever alias is the baseline, and at
+        // 16 GB and above that is Qwen 3.5 4B — 3.0 GB, needing a sustained
+        // ~400 Mbit/s to hold. The message is seeded AFTER the download, so a
+        // user on a slower link reads the claim already knowing it was wrong.
+        let lowered = makeCoordinator().seedMessage.lowercased()
+        #expect(!lowered.contains("a minute"))
+        #expect(!lowered.contains("minutes"))
+        #expect(!lowered.contains("seconds"))
+    }
+
     @Test("The standard starter is the approved 16 GB choice")
     func standardStarterIsFourB() {
         #expect(QuickstartCoordinator.defaultChoice.alias == "qwen3.5-4b-4bit")

@@ -30,11 +30,18 @@ import SwiftUI
 ///
 /// ## Starter policy
 ///
-/// Below 16 GB, onboarding starts from LFM2.5 2.6B; at 16 GB and above,
+/// Below 16 GB, onboarding starts from LFM2.5 1.2B; at 16 GB and above,
 /// it starts from Qwen 3.5 4B. An eligible cached chat model takes priority
-/// so an existing installation does not force another download. LFM2.5 1.2B
-/// remains visible as an explicit low-memory alternative, but is never chosen
-/// automatically. The policy is pure and covered by the starter matrix tests.
+/// so an existing installation does not force another download. LFM2.5 2.6B
+/// remains visible in the ladder as an explicit alternative, but is never
+/// chosen automatically: clean 8 GB validation put its load beyond the app's
+/// usable-RAM budget, which is the whole reason the sub-16 GB baseline is the
+/// 1.2B. The policy is pure and covered by the starter matrix tests.
+///
+/// This paragraph had the two LFM2.5 entries the other way round — it still
+/// described the pre-#2432 policy, where 2.6B was the sub-16 GB baseline and
+/// 1.2B was never automatic. ``baselineChoice(physicalRAMGB:)`` below is the
+/// SSOT; read it rather than this comment if they ever disagree again.
 ///
 /// ### What this means for the empty state
 ///
@@ -393,13 +400,19 @@ final class QuickstartCoordinator {
     /// An authored starter keeps the short onboarding framing. A cached or
     /// manually selected alternative gets a plainer intro without implying it
     /// was downloaded specifically for setup.
+    ///
+    /// No duration is promised. This fires for whichever alias is the baseline,
+    /// and at 16 GB and above that is Qwen 3.5 4B — a 3.0 GB download, which
+    /// needs a sustained ~400 Mbit/s to arrive "in about a minute". The message
+    /// is seeded after the download, so a user who waited ten minutes reads the
+    /// claim knowing it was wrong.
     var seedMessage: String {
         if selection.alias == baselineStarterAlias {
             return """
-You're chatting with \(selection.displayName) — a model picked so you can start \
-chatting in about a minute. Open the picker any time to trade up to a larger \
-model: the Recommended row is chosen for this Mac's RAM, and a bigger pick is a \
-great first upgrade when you want more.
+You're chatting with \(selection.displayName) — the starter picked for this Mac. \
+Open the picker any time to trade up to a larger model: the Recommended row is \
+chosen for this Mac's RAM, and a bigger pick is a great first upgrade when you \
+want more.
 """
         }
         return """
