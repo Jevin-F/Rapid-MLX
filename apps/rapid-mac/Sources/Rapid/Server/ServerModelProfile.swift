@@ -210,9 +210,15 @@ struct ImageInputAvailability: Equatable, Sendable {
         case "text_lane_speculative_decode":
             return "This model is running text-only because speculative decoding is on. Turn it off in Settings › Performance to send photos."
         case "vision_memory_insufficient":
-            // The engine gates on physical RAM, not free RAM, so quitting apps
-            // cannot lift this — only a smaller vision model fits.
-            return "This model's vision mode needs more memory than this Mac has. Choose a smaller vision-capable model to add photos."
+            // The engine gates on PHYSICAL RAM (`physical_ram_gb()` vs the
+            // profile's `vision_min_memory_gb`), so quitting apps cannot lift
+            // this. It must not promise a smaller model either: the reason can
+            // only be emitted for an alias that declares a floor, and both that
+            // do — qwen3.5-4b-4bit and qwen3.5-9b-4bit — declare 32 GB. Stepping
+            // 9B down to 4B changes nothing, so "smaller" named a fix that does
+            // not exist. `tests/test_aliases_contract.py` fails if a lower floor
+            // is ever added, which is when this sentence can promise more.
+            return "This Mac's memory is below what this model's vision mode requires, so it's running text-only. It's total memory rather than free memory, so closing apps won't help. Another vision-capable model may still fit."
         case "vision_hybrid_runtime_unsupported":
             return "This model is running text-only because its vision runtime isn't supported here. Choose a different vision-capable model to add photos."
         case "vision_architecture_unavailable", "vision_hybrid_cache_unsupported",

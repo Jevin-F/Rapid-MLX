@@ -173,10 +173,15 @@ final class ServerModelProfileTests {
         // vision-capable model" sends a user who is already running one after
         // the wrong fix — that is the bug this case exists to prevent.
         #expect(message.contains("memory"))
-        // "Smaller" is what makes it actionable: the engine gates on physical
-        // RAM, so a same-size vision model fails identically and freeing
-        // memory changes nothing.
-        #expect(message.contains("smaller"))
+        // ...but not "smaller", which is a fix that does not exist. The reason
+        // is only emitted for an alias declaring `vision_min_memory_gb`, and
+        // both that do (qwen3.5-4b-4bit, qwen3.5-9b-4bit) declare 32 GB, so
+        // stepping down from 9B to 4B fails identically.
+        // `test_vision_memory_floors_are_uniform` fails if a lower floor is
+        // ever added — that is the signal to revisit this sentence.
+        #expect(!message.lowercased().contains("smaller"))
+        // The engine compares PHYSICAL RAM, so freeing memory is also not it.
+        #expect(!message.lowercased().contains("free up"))
         #expect(message != Self.genericLaneCopy)
     }
 

@@ -640,6 +640,32 @@ def test_vision_memory_floor_requires_a_positive_number(bad_floor) -> None:
         )
 
 
+def test_vision_memory_floors_are_uniform() -> None:
+    """Every declared vision floor is the same, so "pick a smaller one" is not a fix.
+
+    `vision_memory_insufficient` can only be emitted for an alias that declares
+    `vision_min_memory_gb` (see `serving_lane_decision` in `api/utils.py`), and the
+    engine compares it against physical RAM. While every declared floor is equal,
+    stepping down to a smaller vision model lands on the same floor and fails
+    identically — which is why the Desktop copy for that reason must not offer it
+    as a remedy (`ServerModelProfile.message(for:)`).
+
+    If this fails because a lower floor was added, that copy can name a remedy
+    again. Update it and `visionMemoryInsufficientExplainsTheMemoryLimit` together.
+    """
+    floors = {
+        name: spec["vision_min_memory_gb"]
+        for name, spec in _raw_aliases().items()
+        if isinstance(spec, dict) and "vision_min_memory_gb" in spec
+    }
+    assert floors, "no alias declares vision_min_memory_gb — has the field been renamed?"
+    assert len(set(floors.values())) == 1, (
+        f"vision floors are no longer uniform: {floors}. A smaller vision-capable "
+        "model now exists, so the Desktop copy for vision_memory_insufficient can "
+        "recommend one — see this test's docstring."
+    )
+
+
 def test_mtp_preset_requires_a_valid_drafter_and_positive_token_count() -> None:
     """MTP capability metadata is consumed by both CLI and macOS Settings."""
     from vllm_mlx.model_aliases import _coerce
